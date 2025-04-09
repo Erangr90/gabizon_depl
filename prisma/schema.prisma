@@ -1,0 +1,225 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Creator {
+  id        Int     @id @default(autoincrement())
+  firstName String  @default("")
+  lastName  String  @default("")
+  name      String? @default(dbgenerated())
+
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  img       String?
+
+  communities Community? @relation(fields: [communityId], references: [id])
+  communityId Int?
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  firstName String
+  lastName  String
+  name      String?   @default(dbgenerated())
+  age       Int?      @default(dbgenerated())
+  phone     String?
+  email     String    @unique
+  img       String?
+  origin    String?
+  status    String?
+  birthday  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  role      Role      @default(USER)
+
+  saved       Saved[]
+  userMsgs    UserMsg[]
+  watched     Watched[]
+  communities Community[]
+  events      Event[]
+  AdminMsg    AdminMsg?   @relation(fields: [adminMsgId], references: [id])
+  adminMsgId  Int?
+}
+
+model Saved {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
+
+  userId  Int
+  postId  Int
+  eventId Int?
+
+  @@unique([userId, postId])
+}
+
+model Watched {
+  id    Int  @id @default(autoincrement())
+  user  User @relation(fields: [userId], references: [id])
+  post  Post @relation(fields: [postId], references: [id])
+  count Int  @default(0) // count how many times the user watched the post
+
+  createdAt DateTime @default(now())
+  userId    Int
+  postId    Int
+  Event     Event?   @relation(fields: [eventId], references: [id])
+  eventId   Int?
+
+  @@unique([userId, postId])
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  creator   Creator  @relation(fields: [creatorId], references: [id])
+  zoom      String
+  date      DateTime
+  endTime   DateTime
+  type      String   @default("שיעור")
+  desc      String
+  media     String[]
+  sum       String[]
+  yt        String
+  published Boolean  @default(false)
+
+  community Community @relation(fields: [communityId], references: [id])
+
+  creatorId   Int
+  communityId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  saved   Saved[]
+  watched Watched[]
+
+  bonuses Bonus[]
+}
+
+model Event {
+  id          Int       @id @default(autoincrement())
+  title       String
+  user        User[]
+  community   Community @relation(fields: [communityId], references: [id])
+  communityId Int
+  date        DateTime
+  endTime     DateTime
+  loc         String?
+  img         String
+  link        String
+  payLink     String?
+
+  isOnline Boolean @default(false)
+  desc     String  @default("")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  watched   Watched[]
+}
+
+enum UserMsgStatus {
+  NEW
+  PENDING
+  COMPLETED
+  CANCELED
+}
+
+model UserMsg {
+  id        Int           @id @default(autoincrement())
+  contact   User          @relation(fields: [userId], references: [id])
+  title     String
+  desc      String        @default("")
+  status    UserMsgStatus @default(NEW)
+  userId    Int
+  answer    String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @default(now()) @updatedAt
+}
+
+model Community {
+  id           Int     @id @default(autoincrement())
+  name         String
+  img          String
+  solid        String
+  soft         String
+  bg           String
+  smooveApiKey String?
+  smooveListId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  admin    Admin?     @relation(fields: [adminId], references: [id])
+  adminId  Int?
+  creators Creator[]
+  users    User[]
+  posts    Post[]
+  events   Event[]
+  bonuses  Bonus[]
+  talks    Talk[]
+  AdminMsg AdminMsg[]
+}
+
+model Admin {
+  id          Int         @id @default(autoincrement())
+  name        String
+  phone       String
+  img         String
+  communities Community[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Talk {
+  id          Int       @id @default(autoincrement())
+  title       String
+  date        DateTime
+  endTime     DateTime
+  link        String
+  community   Community @relation(fields: [communityId], references: [id])
+  communityId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model AdminMsg {
+  id        Int       @id @default(autoincrement())
+  users     User[]
+  title     String
+  desc      String    @default("")
+  sentDate  DateTime?
+  type      String    @default("הודעות")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  all       Boolean
+
+  community   Community @relation(fields: [communityId], references: [id])
+  communityId Int
+}
+
+//תכנית עונתית
+model Bonus {
+  id          Int       @id @default(autoincrement())
+  title       String
+  desc        String?
+  community   Community @relation(fields: [communityId], references: [id])
+  posts       Post[]
+  communityId Int
+  img         String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+}

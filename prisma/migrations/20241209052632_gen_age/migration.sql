@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "birthday" TIMESTAMP(3);
+
+CREATE OR REPLACE FUNCTION update_age()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.age = DATE_PART('year', AGE(NEW.birthday));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER age_update
+BEFORE INSERT OR UPDATE ON "User"
+FOR EACH ROW
+EXECUTE FUNCTION update_age();

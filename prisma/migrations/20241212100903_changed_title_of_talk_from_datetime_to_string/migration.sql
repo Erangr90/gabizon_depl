@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Talk" ALTER COLUMN "title" SET DATA TYPE TEXT;
